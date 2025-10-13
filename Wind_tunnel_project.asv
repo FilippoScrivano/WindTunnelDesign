@@ -31,6 +31,6 @@ Kd = Kf + Kexp;
 
 % Corner
 Vc = 1 / Ar * Vt;
-cv = 1 / 3 *            % Completare
+cv = 
 Rec = rho * Vc * cv / mu;
 Kc = 0.1 + 4.55 / (log10(Rec)) ^ 2.58
