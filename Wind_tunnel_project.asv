@@ -4,33 +4,81 @@ clc
 
 %% Case 1: Circular cross section
 
-R = 1;                      % [m]
+% Test section
+R = 1;
 D = 2 * R;
 rho = 1.225;
 mu = 1.81e-5;
-TS_ratio = 1.8;
-L = TS_ratio * R;                % [m]
-Vt = 50;
+TS_ratio = 1.8;         % [1 - 2] To be optimized
+L = TS_ratio * R;
+Vt = 50;                % Can change
 Re = rho * Vt * D / mu;
 
 f_fun = @(f) f - (2*log10(Re*sqrt(f)) - 0.8) .^ -2;
 df = @(f) 1 - 1.32547 ./ (f * (log(Re*sqrt(f))) - 0.921034).^3;
 f = newton(1, 1e6, 1e-6, f_fun, df);
 
-% Section loss coeff.
 Kt = f * L / D;
 
 % Diffuser
+theta = 2.5;            % [2 - 3.5] To be optimized
+Aratio = 2.5;           % [2 - 3] To be optimized
+Kf = (1 - 1 / Aratio^2) * f / (8 * sin(theta));
+Ke = -0.00090760^4 - 0.000013310^5 + 0.000013450^6;     % To be changed for Case 2 (square TS)
+Kexp = Ke * ((Aratio - 1) / Aratio) ^ 2;
 
-theta = 2.5;
-Ar = 2.5;
-Kf = (1 - 1 / Ar^2) * f / (8 * sin(theta));
-Ke = -0.00090760^4 - 0.000013310^5 + 0.000013450^6;     % Da cambiare per il Case 2
-Kexp = Ke * ((Ar - 1) / Ar) ^ 2;
 Kd = Kf + Kexp;
 
 % Corner
-Vc = 1 / Ar * Vt;
-cv = 
+Vc = 1 / Aratio * Vt;
+R1 = R;
+A1 = pi * R1^2;
+A2 = A1 * Aratio;
+R2 = sqrt(A2 / pi);
+D2 = 2 * R2;
+CornerWidth = D2 * sqrt(2);
+NVanes = 10;            % To be optimized
+GapVanes = CornerWidth / NVanes;
+GapToChord = 1/3;
+cv = GapToChord * GapVanes;
 Rec = rho * Vc * cv / mu;
-Kc = 0.1 + 4.55 / (log10(Rec)) ^ 2.58
+
+Kc = 0.1 + 4.55 / (log10(Rec)) ^ 2.58;
+
+% Honeycombs
+LengthToDiameter = 7;   % [6 - 8] To be optimized
+beta = 0.8;             % Porosity
+lambda = 0.028;         % To be confirmed
+
+Kh = lambda * (LengthToDiameter + 3) * 1 / beta^2 + (1 / beta - 1) ^ 2;     % Should be around 0.5
+
+% Safety screens
+wm = 0.1 * D2;          % Can be changed
+sigmas = 0.6;            % [50% - 70%] To be optimized
+dw = 0.05 * wm;         % coefficient [0.05 - 1] To be optimized
+betas = 1 - dw / wm;
+Kmesh = 1;              % [1 - 2] To be optimized
+KRe = 1.5;              % [2 - 1] by increasing Re To be optimized
+
+Km = Kmesh * KRe * sigmas + (sigmas / betas)^2;
+
+% Nozzle
+Dts = sqrt(4*A1 / pi);
+Dinlet = sqrt(4*A2 / pi);
+Ln = 0.5 * Dinlet;
+
+Knt = 0.32 * f * Ln / Dts;      % Should be 3% of all losses in the tunnel
+
+% Straighteners
+% R2 = D2 / 2;
+% r = 0.8 * R2;
+% Ns = 4;                         % Number of straighteners for 5 fan blades (must not be a multiple)
+% cs = 2 * pi * r / Ns;
+t_c_ratio = 0.15;
+
+Ks = 0.045 * t_c_ratio + 0.003;
+
+% Fan
+qRatio = 8;                     % [2 - 10] To be optimized
+NHoneycomb = 3
+Kfs = qRatio * (Kt + Kd + 4 * Kc + NHoneycomb * Kh + )
