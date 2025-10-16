@@ -19,6 +19,8 @@ f_fun = @(f) f - (2*log10(Re*sqrt(f)) - 0.8) .^ -2;
 df = @(f) 1 - 1.32547 ./ (f * (log(Re*sqrt(f))) - 0.921034).^3;
 f = newton(1, 1e6, 1e-6, f_fun, df);
 
+qt = 0.5 * rho * Vt^2;
+
 Kt = f * L / D1;
 
 % Diffuser
@@ -35,11 +37,14 @@ f_fun_d = @(f) f - (2*log10(Re_d*sqrt(f)) - 0.8) .^ -2;
 df_d = @(f) 1 - 1.32547 ./ (f * (log(Re_d*sqrt(f))) - 0.921034).^3;
 f_d = newton(1, 1e6, 1e-6, f_fun_d, df_d);
 
-Kf = (1 - 1 / Aratio^2) * f / (8 * sind(theta));
+Kf = (1 - 1 / Aratio^2) * f_d / (8 * sind(theta));
 Ke = -0.00090760^4 - 0.000013310^5 + 0.000013450^6;     % To be changed for Case 2 (square TS)
 Kexp = Ke * ((Aratio - 1) / Aratio) ^ 2;
 
+qd = 0.5 * rho * Vd^2;
+
 Kd = Kf + Kexp;
+Kd = Kd * qd / qt;
 
 % First Corner
 Vc = Vd;
@@ -50,7 +55,10 @@ GapToChord = 1/3;
 cv = GapVanes / GapToChord;
 Rec = Vc * cv / nu;
 
+qc = 0.5 * rho * Vc^2;
+
 Kc = 0.1 + 4.55 / (log10(Rec)) ^ 2.58;
+Kc = Kc * qc / qt;
 
 % Second leg
 V_2l = Vc;
@@ -62,28 +70,30 @@ f_2l = newton(1, 1e6, 1e-6, f_fun_2l, df_2l);
 
 L_2l = 1.1 * L;
 
+q_2l = 0.5 * rho * V_2l^2;
+
 K_2l = f_2l * L_2l / D2;
+K_2l = K_2l * q_2l / qt;
 
 
-% Honeycombs
-LengthToDiameter = 7;   % [6 - 8] To be optimized
-beta = 0.8;             % Porosity
-lambda = 0.028;         % To be confirmed
+% Safety screens
+wm = 0.1 * D2;          % Can be changed
+sigmas = 0.6;            % [50% - 70%] To be optimized
+dw = 0.1 * wm;         % coefficient [0.05 - 1] To be optimized
+betas = 1 - dw / wm;
+Kmesh = 1;              % [1 - 2] To be optimized
+KRn = 1;              % [2 - 1] by increasing Re To be optimized
 
-Kh = lambda * (LengthToDiameter + 3) * 1 / beta^2 + (1 / beta - 1) ^ 2;     % Should be around 0.5
+qm = 0.5 * rho * V_2l^2;
 
-% % Safety screens
-% wm = 0.1 * D2;          % Can be changed
-% sigmas = 0.5;            % [50% - 70%] To be optimized
-% dw = 0.05 * wm;         % coefficient [0.05 - 1] To be optimized
-% betas = 1 - dw / wm;
-% Kmesh = 1;              % [1 - 2] To be optimized
-% KRn = 1;              % [2 - 1] by increasing Re To be optimized
-% 
-% Km = Kmesh * KRn * sigmas + (sigmas / betas)^2;
+Km = Kmesh * KRn * sigmas + (sigmas / betas)^2;
+Km = Km * qm / qt;
 
 % Second corner
+qc2 = q_2l;
+
 Kc2 = 0.1 + 4.55 / (log10(Rec)) ^ 2.58;
+Kc2 = Kc2 * qc2 / qt;
 
 % Fan leg
 theta_fan = 1.5;
@@ -105,12 +115,18 @@ f_fan = newton(1, 1e6, 1e-6, f_fun_fan, df_fan);
 Kf_fan = (1 - 1 / Aratio_fan^2) * f_fan / (8 * sind(theta_fan));
 Kexp_fan = Ke * ((Aratio_fan - 1) / Aratio_fan) ^ 2;
 
+q_fan = 0.5 * rho * ((V_fan_in + V_fan_out)/2)^2;
+
 Kfan = Kf_fan + Kexp_fan;
+Kfan = Kfan * q_fan / qt;
 
 % Third corner
 Rec_3 = V_fan_out * cv / nu;
 
+qc3 = 0.5 * rho * V_fan_out^2;
+
 Kc3 = 0.1 + 4.55 / (log10(Rec_3)) ^ 2.58;
+Kc3 = Kc3 * qc3 / qt;
 
 % Third leg
 V_3l = V_fan_out;
@@ -122,33 +138,52 @@ f_3l = newton(1, 1e6, 1e-6, f_fun_3l, df_3l);
 
 L_3l = L_2l;
 
+q_3l = 0.5 * rho * V_3l^2;
+
 K_3l = f_3l * L_3l / D3;
+K_3l = K_3l * q_3l / qt;
 
 % Fourth corner
+qc4 = 0.5 * rho * V_3l^2;
+
 Kc4 = 0.1 + 4.55 / (log10(Rec_3)) ^ 2.58;
+Kc4 = Kc4 * qc4 / qt;
+
+% Honeycombs
+LengthToDiameter = 6;   % [6 - 8] To be optimized
+beta = 0.8;             % Porosity
+lambda = 0.028;         % To be confirmed
+
+qh = 0.5 * rho * V_3l^2;
+
+Kh = lambda * (LengthToDiameter + 3) * 1 / beta^2 + (1 / beta - 1) ^ 2;     % Should be around 0.5
+Kh = Kh * qh / qt;
 
 % Nozzle
-Ln = 1.5 * L;
+Ln = 1.2 * L;
 Vout_n = Vt;
 Vin_n = V_fan_out;
 
 ReIn_n = Vin_n * D3 / nu;
 ReOut_n = Vout_n * D1 / nu;
-Re_n = (ReIn_n + ReOut_n) / 2;
+Re_n = ReOut_n;
 f_fun_n = @(f) f - (2*log10(Re_n*sqrt(f)) - 0.8) .^ -2;
 df_n = @(f) 1 - 1.32547 ./ (f * (log(Re_n*sqrt(f))) - 0.921034).^3;
 f_n = newton(1, 1e6, 1e-6, f_fun_n, df_n);
 
-Knt = 0.32 * f_n * Ln / D1;      % Should be 3% of all losses in the tunnel
+q_n = 0.5 * rho * ((Vin_n + Vout_n) / 2)^2;
 
+Knt = 0.32 * f_n * Ln / D1;      % Should be 3% of all losses in the tunnel
+Knt = Knt * q_n / qt;
 
 % Straighteners
 t_c_ratio = 0.15;
+qs = 0.5 * rho * ((V_fan_in + V_fan_out) / 2)^2;
 
 Ks = 0.045 * t_c_ratio + 0.003;
+Ks = Ks * qs / qt;
 
 % Fan
-qRatio = 8;                     % [2 - 10] To be optimized
-Kfs = (Kt + Kd + Kc + K_2l + Kc2 + Kh + Kfan + Kc3 + K_ + Km + Knt + Ks);
-% 0.03 * Kfs
-% Knt
+qRatio = 2.5;                  % [2 - 10] To be optimized
+Kfs = qRatio * (Kt + Kd + Kc + K_2l + Km + Kc2 + Kh + Kfan + Kc3 + K_3l + Kc4 + Knt + Ks);
+disp(Knt * qt / q_n / Kfs * 100)
