@@ -77,12 +77,12 @@ K_2l = K_2l * q_2l / qt;
 
 
 % Safety screens
-wm = 0.1 * D2;          % Can be changed
-sigmas = 0.6;            % [50% - 70%] To be optimized
-dw = 0.1 * wm;         % coefficient [0.05 - 1] To be optimized
+wm = 0.1 * D2;
+dw = 0.05 * wm;         % coefficient [0.05 - 1] To be optimized
 betas = 1 - dw / wm;
+sigmas = 1 - betas;
 Kmesh = 1;              % [1 - 2] To be optimized
-KRn = 1;              % [2 - 1] by increasing Re To be optimized
+KRn = 1;                % [2 - 1] by increasing Re To be optimized
 
 qm = 0.5 * rho * V_2l^2;
 
@@ -152,11 +152,11 @@ Kc4 = Kc4 * qc4 / qt;
 % Honeycombs
 LengthToDiameter = 6;   % [6 - 8] To be optimized
 beta = 0.8;             % Porosity
-lambda = 0.028;         % To be confirmed
+lambda = 0.01;          % To be confirmed
 
 qh = 0.5 * rho * V_3l^2;
 
-Kh = lambda * (LengthToDiameter + 3) * 1 / beta^2 + (1 / beta - 1) ^ 2;     % Should be around 0.5
+Kh = lambda * (LengthToDiameter + 3) * 1 / beta^2 + (1 / beta - 1) ^ 2;     % Should be around 0.2
 Kh = Kh * qh / qt;
 
 % Nozzle
@@ -185,5 +185,4 @@ Ks = Ks * qs / qt;
 
 % Fan
 qRatio = 2.5;                  % [2 - 10] To be optimized
-Kfs = qRatio * (Kt + Kd + Kc + K_2l + Kc2 + Kfan + Kc3 + K_3l + Kc4 + Knt + Ks);
-disp(Knt * qt / q_n / Kfs * 100)
+Kfs = qRatio * (Kt + Kd + Kc + K_2l + Km + Kc2 + Kfan + Kc3 + K_3l + Kh + Kc4 + Knt + Ks);

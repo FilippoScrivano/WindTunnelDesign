@@ -152,11 +152,11 @@ Kc4 = Kc4 * qc4 / qt;
 % Honeycombs
 LengthToDiameter = 6;   % [6 - 8] To be optimized
 beta = 0.8;             % Porosity
-lambda = 0.028;         % To be confirmed
+lambda = 0.0;         % To be confirmed
 
 qh = 0.5 * rho * V_3l^2;
 
-Kh = lambda * (LengthToDiameter + 3) * 1 / beta^2 + (1 / beta - 1) ^ 2;     % Should be around 0.5
+Kh = lambda * (LengthToDiameter + 3) * 1 / beta^2 + (1 / beta - 1) ^ 2     % Should be around 0.2
 Kh = Kh * qh / qt;
 
 % Nozzle
@@ -166,7 +166,7 @@ Vin_n = V_fan_out;
 
 ReIn_n = Vin_n * D3 / nu;
 ReOut_n = Vout_n * D1 / nu;
-Re_n = ReOut_n;
+Re_n = (ReIn_n + ReOut_n) / 2;
 f_fun_n = @(f) f - (2*log10(Re_n*sqrt(f)) - 0.8) .^ -2;
 df_n = @(f) 1 - 1.32547 ./ (f * (log(Re_n*sqrt(f))) - 0.921034).^3;
 f_n = newton(1, 1e6, 1e-6, f_fun_n, df_n);
@@ -185,5 +185,5 @@ Ks = Ks * qs / qt;
 
 % Fan
 qRatio = 2.5;                  % [2 - 10] To be optimized
-Kfs = qRatio * (Kt + Kd + Kc + K_2l + Km + Kc2 + Kh + Kfan + Kc3 + K_3l + Kc4 + Knt + Ks);
+Kfs = qRatio * (Kt + Kd + Kc + K_2l + Km + Kc2 + Kfan + Kc3 + K_3l + Kh + Kc4 + Knt + Ks);
 disp(Knt * qt / q_n / Kfs * 100)
