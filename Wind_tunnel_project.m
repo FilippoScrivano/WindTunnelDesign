@@ -4,6 +4,8 @@ clc
 
 %% Case 1: Circular cross section
 
+NEngines = 2;                       % Number of engines
+
 % Test section
 R1 = 1;
 D1 = 2 * R1;
@@ -173,16 +175,27 @@ f_n = newton(1, 1e6, 1e-6, f_fun_n, df_n);
 
 q_n = 0.5 * rho * ((Vin_n + Vout_n) / 2)^2;
 
-Knt = 0.32 * f_n * Ln / D1;      % Should be 3% of all losses in the tunnel
-Knt = Knt * q_n / qt;
+Knt = 0.32 * f_n * Ln / D1;
+Knt = Knt * q_n / qt;               % Should be 3% of all losses in the tunnel
 
-% Straighteners
-t_c_ratio = 0.15;
-qs = 0.5 * rho * ((V_fan_in + V_fan_out) / 2)^2;
+% Straighteners, needed only for an odd number of engines
+if mod(NEngines, 2) == 0
+    Ks = 0;
+else
+    t_c_ratio = 0.15;
+    qs = 0.5 * rho * ((V_fan_in + V_fan_out) / 2)^2;
 
-Ks = 0.045 * t_c_ratio + 0.003;
-Ks = Ks * qs / qt;
+    Ks = 0.045 * t_c_ratio + 0.003;
+    Ks = Ks * qs / qt;
+end
 
 % Fan
 qRatio = 2.5;                  % [2 - 10] To be optimized
+qFan = qt / qRatio;
 Kfs = qRatio * (Kt + Kd + Kc + K_2l + Km + Kc2 + Kfan + Kc3 + K_3l + Kh + Kc4 + Knt + Ks);
+
+%% Fan design
+% Power needed
+Pc = (Kfs / qRatio * qt * A1 * Vt);
+beta_safety = 1.2;
+Pm = beta_safety * Pc / NEngines
